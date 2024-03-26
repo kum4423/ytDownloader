@@ -12,7 +12,6 @@ const fs = require("fs");
 /////////////////////////////////////
 // Do not change the lines at the top
 /////////////////////////////////////
-
 const path = require("path");
 const {shell, ipcRenderer, clipboard} = require("electron");
 const {default: YTDlpWrap} = require("yt-dlp-wrap-plus");
@@ -61,6 +60,13 @@ let cookieArg = "";
 let browser = "";
 let maxActiveDownloads = 5;
 let showMoreFormats = false;
+let configArg = "";
+let configTxt = "";
+
+if (localStorage.getItem("configPath")) {
+	configArg = "--config-location";
+	configTxt = `"${localStorage.getItem("configPath")}"`;
+}
 
 function checkMaxDownloads() {
 	if (localStorage.getItem("maxActiveDownloads")) {
@@ -91,7 +97,11 @@ let controllers = new Object();
 let preferredVideoQuality = 720;
 let preferredAudioQuality = "";
 let preferredVideoCodec = "avc1";
-
+/**
+ *
+ * @param {string} id
+ * @returns {any}
+ */
 function getId(id) {
 	return document.getElementById(id);
 }
@@ -258,14 +268,19 @@ async function getInfo(url) {
 	// Cleaning text
 	getId("videoFormatSelect").innerHTML = "";
 	getId("audioFormatSelect").innerHTML = "";
-	getId("startTime").value = "";
+	getId("audioForVideoFormatSelect").innerHTML = `<option value="none|none">No Audio</option>`;
+
+	const startTime = getId("startTime");
+	startTime.value = "";
 	getId("endTime").value = "";
 	getId("errorBtn").style.display = "none";
 	getId("errorDetails").style.display = "none";
 	getId("errorDetails").textContent = "";
 
 	if (localStorage.getItem("preferredVideoQuality")) {
-		preferredVideoQuality = localStorage.getItem("preferredVideoQuality");
+		preferredVideoQuality = Number(
+			localStorage.getItem("preferredVideoQuality")
+		);
 	}
 	if (localStorage.getItem("preferredAudioQuality")) {
 		preferredAudioQuality = localStorage.getItem("preferredAudioQuality");
@@ -291,6 +306,7 @@ async function getInfo(url) {
 	}
 
 	let validInfo = true;
+
 	let info = "";
 
 	const infoProcess = cp.spawn(
@@ -301,6 +317,8 @@ async function getInfo(url) {
 			"--no-warnings",
 			cookieArg,
 			browser,
+			configArg,
+			configTxt,
 			`"${url}"`,
 		],
 		{
@@ -331,22 +349,29 @@ async function getInfo(url) {
 
 	infoProcess.on("close", () => {
 		if (validInfo) {
-			info = JSON.parse(info);
-			console.log(info);
+			/**
+			 * @typedef {import("./types").info} info
+			 * @type {info}
+			 */
+			const parsedInfo = JSON.parse(info);
+			console.log(parsedInfo);
 
-			title = info.title;
-			id = info.id;
-			thumbnail = info.thumbnail;
-			duration = info.duration;
+			title = `${parsedInfo.title} [${parsedInfo.id}]`;
+			id = parsedInfo.id;
+			thumbnail = parsedInfo.thumbnail;
+			duration = parsedInfo.duration;
 			/**
 			 * @typedef {import("./types").format} format
 			 * @type {format[]}
 			 */
-			const formats = info.formats;
+			const formats = parsedInfo.formats;
 			console.log(formats);
 
+			/**
+			 * @type {HTMLInputElement[]}
+			 */
+			// @ts-ignore
 			const urlElements = document.querySelectorAll(".url");
-
 			urlElements.forEach((element) => {
 				element.value = url;
 			});
@@ -361,11 +386,12 @@ async function getInfo(url) {
 				`<input class="title" id="titleName" type="text" value="${title}" onchange="renameTitle()">`;
 
 			let audioSize = 0;
-			let defaultVideoFormat = 720;
+			let defaultVideoFormat = 144;
 			let videoFormatCodecs = {};
 
 			let preferredAudioFormatLength = 0;
 			let preferredAudioFormatCount = 0;
+			let maxAudioFormatNoteLength = 10;
 
 			// Initially going through all formats
 			// Getting approx size of audio file and checking if audio is present
@@ -374,12 +400,13 @@ async function getInfo(url) {
 				if (
 					format.height <= preferredVideoQuality &&
 					format.height >= defaultVideoFormat &&
-					format.video_ext !== "none" &&
+					(format.video_ext !== "none" &&
 					!(
 						format.video_ext === "mp4" &&
 						format.vcodec &&
 						format.vcodec.split(".")[0] === "vp09"
-					)
+					))
+					&& (!showMoreFormats ? format.video_ext !== "webm" : true)
 				) {
 					defaultVideoFormat = format.height;
 
@@ -404,8 +431,13 @@ async function getInfo(url) {
 					audioSize =
 						Number(format.filesize || format.filesize_approx) /
 						1000000;
+					
 					if (!audioExtensionList.includes(format.audio_ext)) {
 						audioExtensionList.push(format.audio_ext);
+					}
+
+					if (format.format_note.length > maxAudioFormatNoteLength) {
+						maxAudioFormatNoteLength = format.format_note.length
 					}
 				}
 
@@ -436,10 +468,13 @@ async function getInfo(url) {
 					format.vcodec &&
 					format.vcodec.split(".")[0] === preferredVideoCodec &&
 					!selected &&
+					(format.video_ext !== "none" &&
 					!(
 						format.video_ext === "mp4" &&
+						format.vcodec &&
 						format.vcodec.split(".")[0] === "vp09"
-					)
+					))
+					&& (!showMoreFormats ? format.video_ext !== "webm" : true)
 				) {
 					selectedText = " selected ";
 					selected = true;
@@ -451,26 +486,27 @@ async function getInfo(url) {
 						1000000
 					).toFixed(2);
 				} else {
-					if (format.tbr) {
-						size = (
-							(format.tbr * 128 * duration) /
-							1000000
-						).toFixed(2);
-					} else {
-						size = i18n.__("Unknown size");
-					}
+					// if (format.tbr) {
+					// 	size = (
+					// 		(format.tbr * 50 * duration) /
+					// 		1000000
+					// 	).toFixed(2);
+					// } else {
+						
+					// }
+					size = i18n.__("Unknown size");
 				}
 
 				// For videos
 
 				if (
-					format.video_ext !== "none" &&
-					format.audio_ext === "none" &&
+					(format.video_ext !== "none" &&
 					!(
 						format.video_ext === "mp4" &&
 						format.vcodec &&
 						format.vcodec.split(".")[0] === "vp09"
-					)
+					))
+					&& (!showMoreFormats ? format.video_ext !== "webm" : true)
 				) {
 					if (size !== i18n.__("Unknown size")) {
 						size = (Number(size) + 0 || Number(audioSize)).toFixed(
@@ -511,14 +547,14 @@ async function getInfo(url) {
 						format.format_id ||
 						"Unknown quality";
 					const spaceAfterQuality = "&#160".repeat(
-						8 - quality.length
+						quality.length <= 8 && 8 - quality.length > 0
+							? 8 - quality.length
+							: 1
 					);
 
 					// Extension
 					const extension = format.ext;
-					const spaceAfterExtension = "&#160".repeat(
-						5 - extension.length
-					);
+
 					// Format and Quality Options
 					const element =
 						"<option value='" +
@@ -529,12 +565,11 @@ async function getInfo(url) {
 						quality +
 						spaceAfterQuality +
 						"| " +
-						extension +
-						spaceAfterExtension +
+						extension.padEnd(5, "\xa0") +
 						"|  " +
-						vcodec +
-						spaceAfterVcodec +
+						(vcodec ? vcodec + spaceAfterVcodec : '') +
 						size +
+						(format.acodec !== "none" ? " 🔈" : "") +
 						"</option>";
 					getId("videoFormatSelect").innerHTML += element;
 				}
@@ -543,6 +578,10 @@ async function getInfo(url) {
 					format.audio_ext !== "none" ||
 					(format.acodec !== "none" && format.video_ext === "none")
 				) {
+					if (!showMoreFormats && format.audio_ext === "webm") {
+						continue;
+					}
+
 					size =
 						size !== i18n.__("Unknown size")
 							? size + " MB"
@@ -569,52 +608,37 @@ async function getInfo(url) {
 
 					const format_id = format.format_id + "|" + audio_ext;
 
+					/**@type {string} */
+					let formatNote = (i18n.__(format.format_note) ||
+					i18n.__("Unknown quality"));
+
+					formatNote = formatNote.padEnd(maxAudioFormatNoteLength, "\xa0")
+
 					const element =
 						"<option value='" +
 						format_id +
 						"'" +
 						audioSelectedText +
 						">" +
-						i18n.__("Quality") +
-						": " +
-						(i18n.__(format.format_note) ||
-							i18n.__("Unknown quality")) +
-						" | " +
-						audio_ext +
+						// i18n.__("Quality") +
+						// ": " +
+						formatNote +
+						"| " +
+						audio_ext.padEnd(4, "\xa0") +
 						" | " +
 						size +
 						"</option>";
+
 					getId("audioFormatSelect").innerHTML += element;
+					getId("audioForVideoFormatSelect").innerHTML += element;
+					
 				}
 				// Both audio and video available
 				else if (
 					format.audio_ext !== "none" ||
 					(format.acodec !== "none" && format.video_ext !== "none")
 				) {
-					let size;
-					if (format.filesize || format.filesize_approx) {
-						size = (
-							Number(format.filesize || format.filesize_approx) /
-							1000000
-						).toFixed(2);
-					} else {
-						size = i18n.__("Unknown size");
-					}
-					const element =
-						"<option value='" +
-						(format.format_id + "|" + format.ext) +
-						"'>" +
-						(i18n.__(format.format_note) ||
-							format.resolution ||
-							i18n.__("Unknown quality")) +
-						"  |  " +
-						format.ext +
-						"  |  " +
-						size +
-						" " +
-						i18n.__("MB") +
-						"</option>";
-					getId("videoFormatSelect").innerHTML += element;
+					// Skip them
 				}
 
 				// When there is no audio
@@ -753,7 +777,6 @@ getId("extractBtn").addEventListener("click", () => {
 		download("extract");
 		currentDownloads++;
 	} else {
-		// Handling active downloads for extracting audio
 		manageAdvanced(duration);
 		const range1 = rangeOption;
 		const range2 = rangeCmd;
@@ -868,8 +891,7 @@ function download(
 ) {
 	// Config file
 	const newTitle = title1 || title;
-	let configArg = "";
-	let configTxt = "";
+
 	if (localStorage.getItem("configPath")) {
 		configArg = "--config-location";
 		configTxt = `"${localStorage.getItem("configPath")}"`;
@@ -877,9 +899,10 @@ function download(
 
 	const url = url1 || getId("url").value;
 	console.log("URL", url);
-	let ext, extractExt, extractFormat1, extractQuality1;
+	let ext, extractExt, extractFormat1, extractQuality1, audioForVideoExt;
 
-	let format_id;
+	/**@type {string}*/
+	let format_id, audioForVideoFormat_id;
 	const randomId = "a" + Math.random().toFixed(10).toString().slice(2);
 
 	// Whether to close app
@@ -887,11 +910,31 @@ function download(
 
 	if (type === "video") {
 		const videoValue = getId("videoFormatSelect").value;
+		/**@type {string} */
+		const audioForVideoValue = getId("audioForVideoFormatSelect").value
+
 		format_id = videoValue.split("|")[0];
-		ext = videoValue.split("|")[1];
+		const videoExt = videoValue.split("|")[1];
+
 		if (videoValue.split("|")[2] != "NO") {
 			preferredVideoQuality = Number(videoValue.split("|")[2]);
 		}
+
+		audioForVideoFormat_id = audioForVideoValue.split("|")[0];
+
+		if (audioForVideoValue.split("|")[1] === "webm") {
+			audioForVideoExt = "opus";
+		} else {
+			audioForVideoExt = audioForVideoValue.split("|")[1];
+		}
+
+		if ((videoExt === "mp4" && audioForVideoExt === "opus") || (videoExt === "webm" && (audioForVideoExt === "m4a" || audioForVideoExt === "mp4"))) {
+			ext = "mkv"
+		} else {
+			ext = videoExt;
+		}
+
+
 	} else if (type === "audio") {
 		format_id = getId("audioFormatSelect").value.split("|")[0];
 		if (getId("audioFormatSelect").value.split("|")[1] === "webm") {
@@ -900,7 +943,7 @@ function download(
 			ext = getId("audioFormatSelect").value.split("|")[1];
 		}
 	}
-	console.log("video extension:", ext);
+	console.log("Download extension:", ext);
 
 	const newItem = `
 		<div class="item" id="${randomId}">
@@ -975,20 +1018,25 @@ function download(
 	}
 	console.log("Filename:", filename);
 
-	let audioFormat;
+	/**@type {string} */
+	let audioFormat = "+ba";
 
-	if (ext === "mp4") {
-		if (!audioExtensionList.length == 0) {
-			if (audioExtensionList.includes("m4a")) {
-				audioFormat = "+m4a";
+	if (audioForVideoFormat_id === "auto") {
+		if (ext === "mp4") {
+			if (!(audioExtensionList.length == 0)) {
+				if (audioExtensionList.includes("m4a")) {
+					audioFormat = "+m4a";
+				}
 			} else {
-				audioFormat = "+ba";
+				audioFormat = "";
 			}
-		} else {
-			audioFormat = "";
 		}
-	} else {
-		audioFormat = "+ba";
+
+	} else if (audioForVideoFormat_id === "none") {
+		audioFormat = ""
+	}
+	 else {
+		audioFormat = `+${audioForVideoFormat_id}`;
 	}
 
 	const controller = new AbortController();
@@ -1015,7 +1063,7 @@ function download(
 				subs2 || subLangs,
 				"--no-playlist",
 				"--embed-metadata",
-				ext == "mp4" ? "--embed-thumbnail" : "",
+				ext == "mp4" && audioForVideoExt === "m4a" ? "--embed-thumbnail" : "",
 				configArg,
 				configTxt,
 				cookieArg,
@@ -1098,8 +1146,13 @@ function download(
 		);
 	}
 
+	console.log("Spawn args:" + downloadProcess.ytDlpProcess.spawnargs[downloadProcess.ytDlpProcess.spawnargs.length - 1])
+
 	getId(randomId + ".close").addEventListener("click", () => {
-		controller.abort();
+		controller.abort()
+		try {
+			process.kill(downloadProcess.ytDlpProcess.pid, 'SIGHINT')
+		} catch (_error) {}
 	});
 
 	downloadProcess
@@ -1107,16 +1160,21 @@ function download(
 			if (progress.percent == 100) {
 				getId(randomId + "prog").textContent =
 					i18n.__("Processing") + "...";
+				
+				ipcRenderer.send("progress", 0)
 			} else {
 				getId(randomId + "speed").textContent = `${i18n.__("Speed")}: ${
 					progress.currentSpeed || 0
-				}`;
+				}`;			ipcRenderer.send("progress", progress.percent)
+
 				getId(
 					randomId + "prog"
 				).innerHTML = `<progress class="progressBar" min=0 max=100 value=${progress.percent}>`;
+
+				ipcRenderer.send("progress", progress.percent / 100)
 			}
 		})
-		.once("ytDlpEvent", (eventType, eventData) => {
+		.once("ytDlpEvent", (_eventType, _eventData) => {
 			getId(randomId + "prog").textContent = i18n.__("Downloading...");
 		})
 		.once("close", (code) => {
@@ -1220,7 +1278,6 @@ function renameTitle() {
 // Opening windows
 function closeMenu() {
 	getId("menuIcon").style.transform = "rotate(0deg)";
-	menuIsOpen = false;
 	let count = 0;
 	let opacity = 1;
 	const fade = setInterval(() => {
@@ -1229,7 +1286,7 @@ function closeMenu() {
 			getId("menu").style.display = "none";
 		} else {
 			opacity -= 0.1;
-			getId("menu").style.opacity = opacity;
+			getId("menu").style.opacity = String(opacity);
 			count++;
 		}
 	}, 50);
@@ -1245,7 +1302,6 @@ function hideHidden() {
 }
 
 // Menu
-
 getId("preferenceWin").addEventListener("click", () => {
 	closeMenu();
 	ipcRenderer.send("load-page", __dirname + "/preferences.html");

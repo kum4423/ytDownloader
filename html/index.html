@@ -92,16 +92,35 @@
         </div>
         <p id="title">Title </p>
 
+        <!-- Video tab -->
         <div id="videoList">
-            <label class="formatSelect">Select Format </label>
-            <select id="videoFormatSelect" class="select">
-            </select>
+            <div class="separationBox">
+                <h2 id="videoHeader">Video</h2>
+                <label class="formatSelect">Select Format </label>
+                <select id="videoFormatSelect" class="select">
+                </select>
+                <br>
+                <input type="hidden" name="url" class="url" id="url">
+
+                <!-- Audio options for video -->
+                <div id="audioForVideo">
+                    <h2 id="audioHeader">Audio</h2>
+                    <label class="formatSelect">Select Audio Format </label>
+                    <select id="audioForVideoFormatSelect" class="select">
+                    </select>
+                    <br>
+                    <input type="hidden" name="url" class="url">
+                </div>
+                <br>
+            </div>
+
+
             <br>
-            <input type="hidden" name="url" class="url" id="url">
             <button class="submitBtn" id="videoDownload">Download</button>
             <button id="advancedVideoToggle" class="advancedToggle" onClick="advancedToggle()">More options</button>
         </div>
 
+        <!-- Audio tab -->
         <div id="audioList">
             <div id="audioPresent">
                 <label class="formatSelect">Select Format </label>
@@ -113,6 +132,7 @@
                 <button id="advancedAudioToggle" class="advancedToggle" onClick="advancedToggle()">More options</button>
             </div>
         </div>
+
         <div id="advanced">
             <div class="advancedItem">
                 <span id="quitTxt">Close app when download finishes</span>
@@ -172,7 +192,6 @@
         </div>
 
         <!-- Extraction options end -->
-
 
     </div>
     <!-- Downloads list -->

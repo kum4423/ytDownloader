@@ -4,16 +4,16 @@
 		"yt-dlp-wrap-plus": "^2.3.18"
 	},
 	"name": "ytdownloader",
-	"version": "3.16.1",
+	"version": "3.17.3",
 	"main": "main.js",
 	"scripts": {
 		"start": "electron .",
 		"watch": "nodemon --exec electron .",
 		"dist": "electron-builder",
 		"debug": "electron --inspect=5858 .",
-		"windows": "./windows.sh && electron-builder -w",
-		"linux": "./linux.sh && electron-builder -l",
-		"mac": "./mac.sh && electron-builder -m",
+		"windows": "electron-builder -w",
+		"linux": "electron-builder -l",
+		"mac": "electron-builder -m",
 		"publish-linux": "cp ../ffmpeg-bin/ffmpeg . && electron-builder -l --publish=always",
 		"publish-windows": "cp ../ffmpeg-bin/ffmpeg.exe . && electron-builder -w --publish=always",
 		"publish-mac": "cp ../ffmpeg-bin/mac/ffmpeg . && electron-builder -m --publish=always",
@@ -35,7 +35,8 @@
 	"description": "Download videos and audios from YouTube and many other sites",
 	"devDependencies": {
 		"electron": "^27.0.2",
-		"electron-builder": "^24.6.4"
+		"electron-builder": "^24.6.4",
+		"typescript": "^5.3.3"
 	},
 	"build": {
 		"productName": "YTDownloader",
@@ -86,13 +87,15 @@
 				"Appimage",
 				"snap",
 				"rpm",
-				"zip"
+				"zip",
+				"deb"
 			],
 			"category": "Utility",
 			"artifactName": "${productName}_Linux.${ext}"
 		},
 		"snap": {
-			"grade": "stable"
+			"grade": "stable",
+			"base": "core22"
 		},
 		"win": {
 			"target": [

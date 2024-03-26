@@ -343,11 +343,11 @@ body {
 	background-color: var(--box-main);
 	border-radius: 10px;
 	width: 80%;
-	padding: 10px 10px 20px 10px;
+	padding: 10px 10px 15px 10px;
 	color: var(--text);
 }
 
-#audioExtract {
+#audioExtract, .separationBox {
 	margin: 10px;
 	padding: 10px;
 	background-color: var(--box-toggle);
@@ -399,9 +399,10 @@ body {
 	font-size: large;
 	margin: 8px;
 	outline: none;
+	max-width: min(400px, 100%);
 }
 
-#videoFormatSelect, #audioFormatSelect {
+#videoFormatSelect, #audioFormatSelect, #audioForVideoFormatSelect {
 	font-family: JetBrains, monospace;
 	font-size: medium;
 }
@@ -577,6 +578,11 @@ button {
 #subHeader {
 	font-weight: bold;
 	margin-top: 0;
+}
+
+h2{
+	margin: 12px;
+	font-size: 24px;
 }
 
 /* Scrollbar */

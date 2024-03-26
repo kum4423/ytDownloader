@@ -2,7 +2,10 @@
 <component type="desktop">
   <id>io.github.aandrew_me.ytdn</id>
   <name>Youtube Downloader Plus</name>
-  <developer_name>Andrew</developer_name>
+  <launchable type="desktop-id">io.github.aandrew_me.ytdn.desktop</launchable>
+  <developer id="io.github.aandrew_me">
+    <name>Andrew</name>
+  </developer>
   <url type="bugtracker">https://github.com/aandrew-me/ytDownloader/issues</url>
   <url type="translate">https://github.com/aandrew-me/ytDownloader#internationalization-</url>
   <summary>Download videos and audios from hundreds of sites</summary>
@@ -10,12 +13,12 @@
     <p>ytDownloader lets you download videos and audios of different qualities from hundreds of
       sites including the popular ones but not limited to Youtube, Facebook, Instagram, Tiktok,
       Twitter, Twitch and so on.</p>
-    <p>✔️ Supports Light/Dark/Transparent mode</p>
     <p>✔️ Supports high quality video resolutions</p>
     <p>✔️ Supports audio extraction in multiple formats</p>
     <p>✔️ Supports playlist downloads</p>
     <p>✔️ Supports downloading particular ranges</p>
     <p>✔️ Supports downloading subtitles</p>
+    <p>✔️ Supports multiple themes</p>
     <p>✔️ Completely free and open source</p>
     <p>✔️ Fast download speeds</p>
   </description>
@@ -24,11 +27,11 @@
   <screenshots>
     <screenshot type="default">
       <image>
-        https://user-images.githubusercontent.com/66430340/238856286-62efbca0-28b8-4016-bcf2-1a14bcaa782c.jpg</image>
+        https://github.com/aandrew-me/ytDownloader/assets/66430340/2f6695e7-6ca0-4f7c-91a0-0ad735c1e3af</image>
     </screenshot>
     <screenshot>
       <image>
-        https://user-images.githubusercontent.com/66430340/238856317-34f5270f-bdea-460e-8622-6459cd147b73.jpg</image>
+        https://github.com/aandrew-me/ytDownloader/assets/66430340/3c974ab0-8257-4b8a-88ec-ee6bd119751e</image>
     </screenshot>
   </screenshots>
   <url type="homepage">https://github.com/aandrew-me/ytDownloader</url>
@@ -36,6 +39,33 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="3.17.3" date="2024-3-03">
+      <description>
+        <p>Fixed formats not being shown</p>
+        <p>Added Arabic language</p>
+      </description>
+    </release>
+    <release version="3.17.2" date="2024-2-23">
+      <description>
+        <p>Fixed conflicts with same filenames</p>
+        <p>Fixed formats not being selected properly</p>
+      </description>
+    </release>
+    <release version="3.17.1" date="2024-1-27">
+      <description>
+        <p>Fixed config file not being used when getting info</p>
+      </description>
+    </release>
+    <release version="3.17.0" date="2024-1-27">
+      <description>
+        <p>Changelog</p>
+        <ul>
+          <li>Added option to choose audio for video</li>
+          <li>Webm options will be hidden by default</li>
+          <li>Enhancements</li>
+        </ul>
+      </description>
+    </release>
     <release version="3.16.1" date="2023-12-26" />
     <release version="3.16.0" date="2023-12-24" />
     <release version="3.15.1" date="2023-11-26" />

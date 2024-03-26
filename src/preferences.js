@@ -3,17 +3,17 @@ if (storageTheme){
 	document.documentElement.setAttribute("theme", storageTheme)
 }
 
-let rightToLeft = false;
+let rightToLeft = "false";
 if (localStorage.getItem("rightToLeft")) {
 	rightToLeft = localStorage.getItem("rightToLeft");
 }
 if (rightToLeft == "true") {
-	document.querySelectorAll(".prefBox").forEach((item) => {
+	document.querySelectorAll(".prefBox").forEach((/** @type {HTMLElement} */ item) => {
 		item.style.flexDirection = "row-reverse";
 	});
 } else {
 	console.log("Change to left to right");
-	document.querySelectorAll(".prefBox").forEach((item) => {
+	document.querySelectorAll(".prefBox").forEach((/** @type {HTMLElement} */ item) => {
 		item.style.flexDirection = "row";
 	});
 }
@@ -21,6 +21,11 @@ let downloadPath = localStorage.getItem("downloadPath");
 getId("path").textContent = downloadPath;
 
 const { ipcRenderer } = require("electron");
+/**
+ * 
+ * @param {string} id 
+ * @returns {any}
+ */
 function getId(id) {
 	return document.getElementById(id);
 }
@@ -80,12 +85,12 @@ if (language) {
 function changeLanguage() {
 	const language = getId("select").value;
 	localStorage.setItem("language", language);
-	if (language === "fa") {
-		rightToLeft = true;
-		localStorage.setItem("rightToLeft", true);
+	if (language === "fa" || language === "ar") {
+		rightToLeft = "true";
+		localStorage.setItem("rightToLeft", "true");
 	} else {
-		rightToLeft = false;
-		localStorage.setItem("rightToLeft", false);
+		rightToLeft = "false";
+		localStorage.setItem("rightToLeft", "false");
 	}
 }
 
@@ -179,10 +184,10 @@ getId("maxDownloads").addEventListener("input", ()=>{
 	const number = Number(getId("maxDownloads").value)
 
 	if (number < 1){
-		localStorage.setItem("maxActiveDownloads", 1)
+		localStorage.setItem("maxActiveDownloads", "1")
 	}
 	else{
-		localStorage.setItem("maxActiveDownloads", number)
+		localStorage.setItem("maxActiveDownloads", String(number))
 	}
 })
 
